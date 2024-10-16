@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pandas as pd
 import pickle as pkl
+import random
 
 import os
 
@@ -24,11 +25,18 @@ def get_subset(X, y, filename):
         for j in range(i+11, len(X)):
             X_temp.append(X[j])
             y_temp.append(y[j])
-            subset.append((filename, i, X_temp[:], y_temp[:]))
+            combined_array = np.column_stack((X_temp, y_temp))
+            angle = random.randint(1, 360)
+            theta = np.radians(angle)  # Convert the angle to radians
+            rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], 
+                                        [np.sin(theta), np.cos(theta)]])
+            rotated = np.dot(combined_array, rotation_matrix)
+            shape = j-i
+            subset.append((filename, i, angle, rotated[:-1, :-1], rotated[-1, -1], shape))
         if i!=0 and i%100==0:
-            df = pd.DataFrame(subset, columns=['Filename', 'index', 'X', 'y'])
+            df = pd.DataFrame(subset, columns=['Filename', 'index', 'X', 'y', 'length'])
             df.to_pickle(f"{new_data}/value_{i}.pkl")
-    df = pd.DataFrame(subset, columns=['Filename', 'index', 'X', 'y'])
+    df = pd.DataFrame(subset, columns=['Filename', 'index', 'angle', 'X', 'y', 'length'])
     df.to_pickle(f"{new_data}/value_{i}.pkl")
     print(subset)
 
