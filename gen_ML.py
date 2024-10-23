@@ -12,7 +12,6 @@ class RNNModel:
         temp = np.exp(dot[-1][-1])
         a_N_F = temp / np.sum(temp)
         return a_N_F
-
     def sum_(self, arr, l, s):
         summ = arr[l][1].copy()
         for i in range(2, s+1):
@@ -148,7 +147,9 @@ class RNNModel:
             return pickle.load(f)
 
     def generate(self, train_file, model_file, arc=[39, 40, 40, 39]):
-        data = self.load_data(train_file)
+        if train_file!="": data = self.load_data(train_file)
+        else: 
+            train_file 
         print(f"Training samples: {len(data['train'])}")
         self.wl, self.ws, self.biases = self.load_data(model_file)
         self.backprop_rnn2(np.tanh, self.rnn_deriv, data['train'], data['test'], data['one_hot'])
