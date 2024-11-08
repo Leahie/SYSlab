@@ -1,11 +1,15 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import random
 
 class RNNModel:
-    def __init__(self, arc, lam=0.0001, epoch=500):
-        self.wl, self.ws, self.biases = self.initialize_weights(arc)
+    def __init__(self, model_file="", start = 0, lam=0.001, epoch=500):
         self.lam = lam
+        self.start = start
+        if model_file !="":
+            val = self.load_data(model_file)
+            self.wl, self.ws, self.biases = val['wl'], val['ws'], val['b']
         self.epoch = epoch
 
     def soft_max(self, dot):
@@ -32,37 +36,37 @@ class RNNModel:
         return summ
 
     def initialize_weights(self, arc):
-        wl = [None]
-        ws = [None]
-        biases = [None]
-        for i in range(len(arc)-1):
-            curr, next = arc[i+1], arc[i]
-            temp = (3/((2*curr + next)/2))**.5
-
+        wl, ws, biases = [None], [None], [None]
+        size = [50, 50, 1]  # Set the output size to 2
+        for i in range(len(arc) - 1):
+            curr, next = arc[i + 1], arc[i]
+            temp = (3 / ((2 * size[i] + size[i + 1]) / 2)) ** 0.5
             wl.append(temp * 2 * np.random.rand(curr, next) - temp)
             ws.append(temp * 2 * np.random.rand(curr, curr) - temp)
             biases.append(temp * 2 * np.random.rand(curr, 1) - temp)
-        
-        return wl, ws[:3], biases
+        return wl, ws, biases
 
     def rnn_deriv(self, x):
         return 1/((np.cosh(x))**2)
 
-    def backprop_rnn2(self, A, grad_A, train, test, one_hot):
+    def error(self, x, y):
+        
+        return np.sum(np.square(y - x))
+
+    def backprop_rnn2(self, A, grad_A, train, test):
         N = 2    
         index = 0
+        thresh = int(len(train)*10)
         for _ in range(self.epoch):
             for val in train:
-                if index % 10000 == 0: 
-                    self.store_data("save_" + str(index) + ".pkl", self.ws, self.wl, self.biases)
-                    acc, e = self.test_func(np.tanh, test, one_hot)
-                    print("Index", index, "Epoch", _, ": MSE:", e, "ACC:", acc)
+                if index % thresh == 0 and index!=0: 
+                    self.store_data(f"model/X/X_save_{self.start + index}.pkl", self.ws, self.wl, self.biases)
                 index += 1
 
                 a = [[None]]
                 dot = [[None]]
                 grad = {}
-                x, y = val[0:20], one_hot[val[20:]]
+                x, y = val[0:49], val[49:]
                 for l in range(1, N+1): 
                     a.append([np.zeros((np.shape(self.ws[l])[1], 1))])
                     dot.append([None])  
@@ -70,72 +74,88 @@ class RNNModel:
                 # Forward Prop
                 F = len(x)
                 for s in range(1, F+1):
-                    vec = one_hot[x[s-1]]
-                    a[0].append(vec)  
+                    a[0].append(np.array([x[s-1]]).reshape(-1, 1))
                     for l in range(1, N+1):
                         temp = self.wl[l] @ a[l-1][s] + self.ws[l] @ a[l][s-1] + self.biases[l]
                         dot[l].append(temp) 
                         a[l].append(A(dot[l][s]))
 
-                dot.append((self.wl[3] @ a[2][F]) + self.biases[3])
-                a.append(np.exp(dot[3]) / np.sum(np.exp(dot[3])))
-                grad[3] = (np.eye(y.shape[0]) - a[3]) @ y
-                grad[N] = {}
-                grad[N][F] = grad_A(dot[2][F]) * (self.wl[3].T @ grad[3])
+            fin = a[N][F]
+            grad[N]={}
+            grad[N][F] = grad_A(dot[N][F])*(y-a[N][F])
+            for s in range(F-1, 0, -1):
+                grad[N][s] = grad_A(dot[N][s])*(self.ws[N].T @ grad[N][s+1])
+            for i in range(N-1, 0, -1):
+                grad[i]={}
+                grad[i][F] = grad_A(dot[i][F])*(self.wl[i+1].T @ grad[i+1][F])
 
-                # Backward Propagation
-                for s in range(F-1, 0, -1):
-                    grad[N][s] = grad_A(dot[N][s]) * (self.ws[N].T @ grad[N][s+1])
-                for i in range(N-1, 0, -1):
-                    grad[i] = {}
-                    grad[i][F] = grad_A(dot[i][F]) * (self.wl[i+1].T @ grad[i+1][F])
-                    for s in range(F-1, 0, -1):
-                        grad[i][s] = grad_A(dot[i][s]) * (self.ws[i].T @ grad[i][s+1]) + grad_A(dot[i][s]) * (self.wl[i+1].T @ grad[i+1][s])
+            for i in range(F-1, 0, -1):
+                for j in range(N-1, 0, -1): 
+                    grad[j][i] = grad_A(dot[j][i])*(self.ws[j].T@grad[j][i+1])+ grad_A(dot[j][i])*(self.wl[j+1].T@grad[j+1][i])
+            for i in range(1, N+1):
+                self.biases[i] = self.biases[i] +  self.lam * (self.sum_(grad, i, F))       
+                self.wl[i] = self.wl[i] + self.lam* (self.sum_l(grad, a,i, F))
+                self.ws[i] = self.ws[i] + self.lam* (self.sum_s(grad, a,i, F))
 
-                # Update Weights
-                self.wl[3] += self.lam * (grad[3] @ a[2][F].T)
-                self.biases[3] += self.lam * grad[3]
-                for i in range(1, N+1):
-                    self.biases[i] += self.lam * self.sum_(grad, i, F)       
-                    self.wl[i] += self.lam * self.sum_l(grad, a, i, F)
-                    self.ws[i] += self.lam * self.sum_s(grad, a, i, F)
-
-            acc, e = self.test_func(np.tanh, test, one_hot)
-            print("Epoch", _, ": MSE:", e, "ACC:", acc)
+            e = self.test_func(np.tanh, test, self.wl, self.ws, self.biases)
+            print("Index", index, "Epoch", _, ": MSE:", e)
 
         return self.wl, self.ws, self.biases
 
-    def test_func(self, step, test, one_hot):
-        N, F = 2, 50
-        total = 0
-        correct = 0
-        error_all = 0
+    def test_func(self, step, test, wl, ws, b):
+        N, F = 2, 49
+        total_error = 0
         for val in test:
             a = [[None]]
             dot = [[None]]
-            x, y = val[0:20], one_hot[val[20:]]
-            for l in range(1, N+1):  
-                a.append([np.zeros((np.shape(self.ws[l])[1], 1))])
-                dot.append([None])  
+            x, y = val[0:49], val[49:]
+            for l in range(1, N + 1):
+                a.append([np.zeros((np.shape(ws[l])[1], 1))])
+                dot.append([None])
 
-            for s in range(1, len(x)+1):
-                vec = one_hot[x[s-1]]
-                a[0].append(vec)  
-                for l in range(1, N+1):
+            for s in range(1, F + 1):
+                a[0].append(np.array([x[s-1]]))
+                for l in range(1, N + 1):
+
                     temp = self.wl[l] @ a[l-1][s] + self.ws[l] @ a[l][s-1] + self.biases[l]
-                    dot[l].append(temp) 
+                    dot[l].append(temp)
                     a[l].append(step(dot[l][s]))
+            
+            e = self.error(a[N][F], y)
+            if np.isnan(e): 
+                e
+            total_error += e
+        return total_error / len(test)
 
-            dot.append((self.wl[3] @ a[2][F]) + self.biases[3])
-            temp = np.exp(dot[3]/.7)
-            a.append(temp/np.sum(temp))
-            ind = np.argmax(a[N+1])
-            correct += (ind == list(y).index(1))
-            total += 1
+    def predict(self, val, A=np.tanh, ):
+        N = 2    
+        index = 0
+        a = [[None]]
+        dot = [[None]]
+        grad = {}
+        x, y = val[0:49], val[49:]
+        for l in range(1, N+1): 
+            a.append([np.zeros((np.shape(self.ws[l])[1], 1))])
+            dot.append([None])  
 
-            error_all += np.sum(-y * np.log(a[N+1]))
+        # Forward Prop
+        F = len(x)
+        for s in range(1, F+1):
+            a[0].append(np.array([x[s-1]]).reshape(-1, 1))
+            for l in range(1, N+1):
+                temp = self.wl[l] @ a[l-1][s] + self.ws[l] @ a[l][s-1] + self.biases[l]
+                dot[l].append(temp) 
+                a[l].append(A(dot[l][s]))
 
-        return correct / total, error_all / total
+        return a[N][F]
+
+    def graph(self, val):
+        y_pred = self.predict(val)
+
+        plt.plot(range(len(val)), val, label='x values (training)', marker='o')
+        plt.plot(range(len(val),len(val)+1), y_pred, label='prediction', marker='x')
+        plt.show()
+        
 
     def store_data(self, file, ws, wl, b):
         data = {'ws': ws, 'wl': wl, 'b': b}
@@ -146,15 +166,32 @@ class RNNModel:
         with open(file, 'rb') as f:
             return pickle.load(f)
 
-    def generate(self, train_file, model_file, arc=[39, 40, 40, 39]):
-        if train_file!="": data = self.load_data(train_file)
+    def generate(self, train_file, model_file="", arc=[1, 6, 1]):
+        print(isinstance(train_file, str))
+        if isinstance(train_file, str)==True: data = self.load_data(train_file)
         else: 
-            train_file 
-        print(f"Training samples: {len(data['train'])}")
-        self.wl, self.ws, self.biases = self.load_data(model_file)
-        self.backprop_rnn2(np.tanh, self.rnn_deriv, data['train'], data['test'], data['one_hot'])
+            data = train_file 
+        if model_file !="":
+                val = self.load_data(model_file)
+                self.wl, self.ws, self.biases = val['wl'], val['ws'], val['b']
+        else: self.wl, self.ws, self.biases = self.initialize_weights(arc)
+        self.backprop_rnn2(np.tanh, self.rnn_deriv, data['train'][:1000], data['test'][:500])
 
-    def debug(self, data_file, model_file):
-        data = self.load_data(data_file)
-        model_data = self.load_data(model_file)
-        print(self.test_func(np.tanh, data['test'], model_data['ws'], model_data['b'], data['one_hot']))
+import pandas as pd
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+import tqdm as tqdm
+import os 
+print("here")
+read = "G:/My Drive/Sys Lab/modified_data/new"
+ls2 = os.listdir(read)   
+df = pd.read_pickle(f"{read}/modified_all.pkl")
+model = RNNModel(start=590000)
+
+model.generate('data/data_X.pkl', model_file="./model/X/X_save_590000.pkl" )
+
+# Display of model 
+# with open('data/data_X.pkl', 'rb') as f:
+#     data =  pickle.load(f)
+# model = RNNModel(model_file="./model/X/X_save_490000.pkl")

@@ -1,1 +1,1 @@
-g
+test_func

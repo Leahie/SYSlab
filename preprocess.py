@@ -33,7 +33,9 @@ def get_subset(X, y, filename):
                                     [np.sin(theta), np.cos(theta)]])
         rotated = np.dot(combined_array, rotation_matrix)
         shape = 50
-        subset.append((filename, i, angle, rotated[:-1], rotated[-1], shape))
+        X_all = combined_array[:, 0 ] # This is for X data and x coordinate value
+        Y_all = combined_array[:, 1 ]
+        subset.append((filename, i, angle, X_all, Y_all, shape))
     # df = pd.DataFrame(subset, columns=['Filename', 'index', 'angle', 'X', 'y', 'length'])
     # df.to_pickle(f"{new_data}/modified_{filename.split('/')[-1]}.pkl")
     return subset
