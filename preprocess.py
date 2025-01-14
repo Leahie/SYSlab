@@ -18,8 +18,8 @@ xmin, xmax = 32.0, 401.25
 
 parkinsons_1= "./data/hw_dataset/parkinson/"
 subset = []
-def get_subset(X, y, filename):
-     # format ([Xi, X2. . . Xf], [yi, y2, . . . yf])
+def get_subset(X, y, filename): 
+    #  format ([Xi, X2. . . Xf], [yi, y2, . . . yf])
     X_temp, y_temp = [], []
     for i in tqdm(range(len(X)-50)): # was len(X)
         # X_temp.append(X[i])
@@ -97,7 +97,8 @@ def read_data(filename, label="name"):
             c= c.astype(str)
         
             
-            #plt.scatter(X, y, c=c, cmap='viridis')
+            plt.plot(X, y)
+            return(filename, X,y) # Just to get the values of the control 
             get_subset(X, y, filename)
 
 def visualize_subsets(filepath):
@@ -109,22 +110,32 @@ def visualize_subsets(filepath):
 
 parkinsons_1 = "data/hw_dataset/parkinson"
 parkinsons_2 = "data/new_dataset/parkinson"
-ls = os.listdir(parkinsons_1)
-for i in tqdm(ls):
-    
-    read_data(f"./{parkinsons_1}/{i}", label="Parkinson's")
+control = "data/hw_dataset/control"
+
+# ls = os.listdir(parkinsons_1)
+# for i in tqdm(ls):
+     
+#     read_data(f"./{parkinsons_1}/{i}", label="Parkinson's")
 
 ls2 = os.listdir(parkinsons_2)   
 for i in tqdm(ls2):
     read_data(f"./{parkinsons_2}/{i}", label="Parkinson's")
 
-df = pd.DataFrame(subset, columns=['Filename', 'index', 'angle', 'X', 'y', 'length'])
-df.to_pickle(f"{new_data}/modified_all.pkl")
-# for i in range(1,10):
-#     control = "data/hw_dataset/control/C_000"
-#     read_data(f"./{control}{i}.txt", label=f"control{i}")
+# ls2 = os.listdir(control)   
+# for i in tqdm(ls2):
+#     read_data(f"./{parkinsons_2}/{i}", label="Parkinson's")
 
-# print(xmin/8, xmax/8)
+# df = pd.DataFrame(subset, columns=['Filename', 'index', 'angle', 'X', 'y', 'length'])
+# df.to_pickle(f"{new_data}/modified_all.pkl")
+subset=[]
+for i in range(1,10):
+    control = "data/hw_dataset/control/C_000"
+    arr = read_data(f"./{control}{i}.txt", label=f"control{i}")
+    subset.append(arr)
+# df = pd.DataFrame(subset, columns=['Filename', 'X', 'y']) # For the intent of making the controls into a pickle file
+# df.to_pickle(f"./data/controls.pkl")
 
-# plt.legend(loc="upper left")
-# plt.show()
+print(xmin/8, xmax/8)
+
+plt.legend(loc="upper left")
+plt.show()

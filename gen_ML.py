@@ -1,10 +1,8 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
 class RNNModel:
-<<<<<<< HEAD
     def __init__(self, model_file="", lam=0.0001, epoch=500):
         self.lam = lam
         self.model_file = model_file
@@ -15,20 +13,13 @@ class RNNModel:
             print(val.keys())
             self.wl, self.ws, self.biases = val['wl'], val['ws'], val['b']
         print(self.start)
-=======
-    def __init__(self, model_file="", start = 0, lam=0.001, epoch=500):
-        self.lam = lam
-        self.start = start
-        if model_file !="":
-            val = self.load_data(model_file)
-            self.wl, self.ws, self.biases = val['wl'], val['ws'], val['b']
->>>>>>> 5d72ff8a487138b29ff00ed7ad5beea941c79fac
         self.epoch = epoch
 
     def soft_max(self, dot):
         temp = np.exp(dot[-1][-1])
         a_N_F = temp / np.sum(temp)
         return a_N_F
+
     def sum_(self, arr, l, s):
         summ = arr[l][1].copy()
         for i in range(2, s + 1):
@@ -52,7 +43,6 @@ class RNNModel:
             summ += arr[l][i] @ (a[l][i-1].T)
         return summ
 
-<<<<<<< HEAD
     def initialize_weights(self, arc, n_features):
         wl, ws, biases = [None], [None], [None]
         for i in range(len(arc) - 1):
@@ -63,24 +53,12 @@ class RNNModel:
             wl.append(temp * 2 * np.random.rand(curr, next) - temp)
             ws.append(temp * 2 * np.random.rand(curr, curr) - temp)
             biases.append(temp * 2 * np.random.rand(curr, 2) - temp)
-=======
-    def initialize_weights(self, arc):
-        wl, ws, biases = [None], [None], [None]
-        size = [50, 50, 1]  # Set the output size to 2
-        for i in range(len(arc) - 1):
-            curr, next = arc[i + 1], arc[i]
-            temp = (3 / ((2 * size[i] + size[i + 1]) / 2)) ** 0.5
-            wl.append(temp * 2 * np.random.rand(curr, next) - temp)
-            ws.append(temp * 2 * np.random.rand(curr, curr) - temp)
-            biases.append(temp * 2 * np.random.rand(curr, 1) - temp)
->>>>>>> 5d72ff8a487138b29ff00ed7ad5beea941c79fac
         return wl, ws, biases
 
     def rnn_deriv(self, x):
         return 1 / ((np.cosh(x)) ** 2)
 
     def error(self, x, y):
-<<<<<<< HEAD
         return np.sum(np.square(y - x))
 
     def backprop_rnn2(self, A, grad_A, train, test):
@@ -91,26 +69,12 @@ class RNNModel:
             for val in train:
                 if index % thresh == 0 and index != 0:
                     self.store_data(f"model/y_minmax/y_save_{self.start + index}.pkl", self.ws, self.wl, self.biases)
-=======
-        
-        return np.sum(np.square(y - x))
-
-    def backprop_rnn2(self, A, grad_A, train, test):
-        N = 2    
-        index = 0
-        thresh = int(len(train)*10)
-        for _ in range(self.epoch):
-            for val in train:
-                if index % thresh == 0 and index!=0: 
-                    self.store_data(f"model/X/X_save_{self.start + index}.pkl", self.ws, self.wl, self.biases)
->>>>>>> 5d72ff8a487138b29ff00ed7ad5beea941c79fac
                 index += 1
 
                 a = [[None]]
                 dot = [[None]]
                 grad = {}
                 x, y = val[0:49], val[49:]
-<<<<<<< HEAD
                 for l in range(1, N + 1):
                     a.append([np.zeros((np.shape(self.ws[l])[1], 2))])
                     dot.append([None])
@@ -140,37 +104,6 @@ class RNNModel:
                 self.biases[i] = self.biases[i] + self.lam * (self.sum_(grad, i, F))
                 self.wl[i] = self.wl[i] + self.lam * (self.sum_l(grad, a, i, F))
                 self.ws[i] = self.ws[i] + self.lam * (self.sum_s(grad, a, i, F))
-=======
-                for l in range(1, N+1): 
-                    a.append([np.zeros((np.shape(self.ws[l])[1], 1))])
-                    dot.append([None])  
-
-                # Forward Prop
-                F = len(x)
-                for s in range(1, F+1):
-                    a[0].append(np.array([x[s-1]]).reshape(-1, 1))
-                    for l in range(1, N+1):
-                        temp = self.wl[l] @ a[l-1][s] + self.ws[l] @ a[l][s-1] + self.biases[l]
-                        dot[l].append(temp) 
-                        a[l].append(A(dot[l][s]))
-
-            fin = a[N][F]
-            grad[N]={}
-            grad[N][F] = grad_A(dot[N][F])*(y-a[N][F])
-            for s in range(F-1, 0, -1):
-                grad[N][s] = grad_A(dot[N][s])*(self.ws[N].T @ grad[N][s+1])
-            for i in range(N-1, 0, -1):
-                grad[i]={}
-                grad[i][F] = grad_A(dot[i][F])*(self.wl[i+1].T @ grad[i+1][F])
-
-            for i in range(F-1, 0, -1):
-                for j in range(N-1, 0, -1): 
-                    grad[j][i] = grad_A(dot[j][i])*(self.ws[j].T@grad[j][i+1])+ grad_A(dot[j][i])*(self.wl[j+1].T@grad[j+1][i])
-            for i in range(1, N+1):
-                self.biases[i] = self.biases[i] +  self.lam * (self.sum_(grad, i, F))       
-                self.wl[i] = self.wl[i] + self.lam* (self.sum_l(grad, a,i, F))
-                self.ws[i] = self.ws[i] + self.lam* (self.sum_s(grad, a,i, F))
->>>>>>> 5d72ff8a487138b29ff00ed7ad5beea941c79fac
 
             e = self.test_func(np.tanh, test, self.wl, self.ws, self.biases)
             print("Index", index, "Epoch", _, ": MSE:", e)
@@ -187,30 +120,14 @@ class RNNModel:
             for l in range(1, N + 1):
                 a.append([np.zeros((np.shape(ws[l])[1], 1))])
                 dot.append([None])
-<<<<<<< HEAD
 
             for s in range(1, F + 1):
                 a[0].append(np.array(x[s - 1]).reshape(-1, 1))
                 for l in range(1, N + 1):
                     temp = self.wl[l] @ a[l - 1][s] + self.ws[l] @ a[l][s - 1] + self.biases[l]
-=======
-
-            for s in range(1, F + 1):
-                a[0].append(np.array([x[s-1]]))
-                for l in range(1, N + 1):
-
-                    temp = self.wl[l] @ a[l-1][s] + self.ws[l] @ a[l][s-1] + self.biases[l]
->>>>>>> 5d72ff8a487138b29ff00ed7ad5beea941c79fac
                     dot[l].append(temp)
                     a[l].append(step(dot[l][s]))
-            
-            e = self.error(a[N][F], y)
-            if np.isnan(e): 
-                e
-            total_error += e
-        return total_error / len(test)
 
-<<<<<<< HEAD
             e = self.error(a[N][F], y)
             if np.isnan(e):
                 e
@@ -241,30 +158,6 @@ class RNNModel:
 
 
 
-=======
-    def predict(self, val, A=np.tanh, ):
-        N = 2    
-        index = 0
-        a = [[None]]
-        dot = [[None]]
-        grad = {}
-        x, y = val[0:49], val[49:]
-        for l in range(1, N+1): 
-            a.append([np.zeros((np.shape(self.ws[l])[1], 1))])
-            dot.append([None])  
-
-        # Forward Prop
-        F = len(x)
-        for s in range(1, F+1):
-            a[0].append(np.array([x[s-1]]).reshape(-1, 1))
-            for l in range(1, N+1):
-                temp = self.wl[l] @ a[l-1][s] + self.ws[l] @ a[l][s-1] + self.biases[l]
-                dot[l].append(temp) 
-                a[l].append(A(dot[l][s]))
-
-        return a[N][F]
-
->>>>>>> 5d72ff8a487138b29ff00ed7ad5beea941c79fac
     def graph(self, val):
         y_pred = self.predict(val)
 
@@ -282,7 +175,6 @@ class RNNModel:
         with open(file, 'rb') as f:
             return pickle.load(f)
 
-<<<<<<< HEAD
     def generate(self, data_file = "", arc=[1, 6, 1]):
         print(isinstance(self.model_file, str))
         if isinstance(data_file, str)==True: data = self.load_data(data_file)
@@ -292,17 +184,6 @@ class RNNModel:
                 val = self.load_data(self.model_file)
                 self.wl, self.ws, self.biases = val['wl'], val['ws'], val['b']
         else: self.wl, self.ws, self.biases = self.initialize_weights(arc,2)
-=======
-    def generate(self, train_file, model_file="", arc=[1, 6, 1]):
-        print(isinstance(train_file, str))
-        if isinstance(train_file, str)==True: data = self.load_data(train_file)
-        else: 
-            data = train_file 
-        if model_file !="":
-                val = self.load_data(model_file)
-                self.wl, self.ws, self.biases = val['wl'], val['ws'], val['b']
-        else: self.wl, self.ws, self.biases = self.initialize_weights(arc)
->>>>>>> 5d72ff8a487138b29ff00ed7ad5beea941c79fac
         self.backprop_rnn2(np.tanh, self.rnn_deriv, data['train'][:1000], data['test'][:500])
 
 import pandas as pd
@@ -313,7 +194,6 @@ import tqdm as tqdm
 import os 
 print("here")
 read = "G:/My Drive/Sys Lab/modified_data/new"
-<<<<<<< HEAD
 ls2 = os.listdir(read) 
 base = "C:/Users/leahz/OneDrive/Desktop/Quizlet/ATC4/SYSlab"
 
@@ -339,15 +219,3 @@ model.generate(data, arc=[2, 50,30,2])
 #     data =  pickle.load(f)
 # model = RNNModel(model_file="./model/y_minmax/y_save_70000.pkl")
 # model.graph(data['train'][100])
-=======
-ls2 = os.listdir(read)   
-df = pd.read_pickle(f"{read}/modified_all.pkl")
-model = RNNModel(start=590000)
-
-model.generate('data/data_X.pkl', model_file="./model/X/X_save_590000.pkl" )
-
-# Display of model 
-# with open('data/data_X.pkl', 'rb') as f:
-#     data =  pickle.load(f)
-# model = RNNModel(model_file="./model/X/X_save_490000.pkl")
->>>>>>> 5d72ff8a487138b29ff00ed7ad5beea941c79fac
