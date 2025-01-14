@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}">
+    <link href="{{url_for('static',filename='css/output.css')}}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Result</title>
+    <style>
+        .main{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2em, 3em;
+            gap:5px
+        }
+        img {
+            width: 100%; /* Make the image take up the full width of the screen */
+            height: auto; /* Maintain the aspect ratio */
+        }
+    </style>
+</head>
+<body>
+    <div class="main" >
+        <img src="data:image/png;base64, {{ plot_url }}">
+        <div>
+            <p>MSE: {{error}} </p>
+        </div>
+        <br>
+        <div style="display:flex gap:5px"><a href="/">return back</a> <a href="/LTSM">rerun</a> </div>
+        <div>
+            <form method="GET" action="/LTSM">
+                <input type="range" name="slider_value" min="0" max="10" value="50">
+                <br>
+
+                <label for="personalized">Choose your txt file</label>
+                <input type="file" id="personalized" name="personalized" accept=".txt" />
+                <br>
+                <button type="submit">Submit</button>
+                <br>
+            </form>
+        
+
+    
+</body>
+</html>
