@@ -1,7 +1,11 @@
 modified_data
 data 
 2024
+<<<<<<< HEAD
 model
 frontend
 preprocess.ipynb
 visualize.ipynb
+=======
+model
+>>>>>>> 5d72ff8a487138b29ff00ed7ad5beea941c79fac
