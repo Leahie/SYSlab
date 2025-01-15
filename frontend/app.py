@@ -39,7 +39,9 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     return render_template('index.html')
-
+@app.route('/Smooth')
+def smooth():
+    return render_template('ltsm.html', plot_url=plot_url, error=0 )
 @app.route('/LTSM')
 def LTSM():
     value = request.args.get('slider_value', 1)
