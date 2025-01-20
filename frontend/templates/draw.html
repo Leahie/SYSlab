@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Draw a Line</title>
+    <style>
+        .main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2em 3em;
+            gap: 10px;
+            margin:0;
+            width: 100vw;
+        }
+
+        canvas {
+            border: 1px solid black;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <h1 class="text-xl font-bold mb-4">Test out the Model</h1>
+        
+        <canvas id="drawingCanvas" width="600" height="400"></canvas>
+        
+        <form id="submitForm" method="GET"  action="/drawresults">
+            <input type="hidden" name="line_data" id="lineData">
+            Do you have Parkinson's? <br>
+            <input type="radio" id="yes" name="hasParkinson" value="yes">
+            <label for="yes">Yes</label><br>
+            <input type="radio" id="no" name="hasParkinson" value="no">
+            <label for="no">No</label><br>
+
+            <button type="submit" id="submitButton" class="bg-blue-500 text-white px-4 py-2 mt-4 rounded">Submit</button>
+        </form>
+        <div style="display:flex gap:5px"><a href="/">return back</a>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+const ctx = canvas.getContext('2d');
+let isDrawing = false;
+let linePoints = []; // Array to store all points along the drawn line
+
+canvas.addEventListener('mousedown', (e) => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas on new line
+    isDrawing = true;
+    const startX = e.offsetX;
+    const startY = e.offsetY;
+    linePoints = [{ x: startX, y: startY }]; // Initialize with the first point
+    ctx.beginPath(); // Start a new path for the line
+    ctx.moveTo(startX, startY); // Move the pen to the starting point
+});
+
+
+canvas.addEventListener('mousemove', (e) => {
+    if (isDrawing) {
+        const currentX = e.offsetX;
+        const currentY = e.offsetY;
+        
+        linePoints.push({ x: currentX, y: currentY });
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.moveTo(linePoints[0].x, linePoints[0].y);
+        for (let i = 1; i < linePoints.length; i++) {
+            ctx.lineTo(linePoints[i].x, linePoints[i].y);
+        }
+        ctx.stroke();
+    }
+});
+
+canvas.addEventListener('mouseup', () => {
+    isDrawing = false;
+    ctx.beginPath();
+    ctx.moveTo(linePoints[0].x, linePoints[0].y);
+    for (let i = 1; i < linePoints.length; i++) {
+        ctx.lineTo(linePoints[i].x, linePoints[i].y);
+    }
+    ctx.stroke();
+});
+
+// Handle form submission
+document.getElementById('submitButton').addEventListener('click', (e) => {
+    e.preventDefault();  // Prevent the default form submission
+    if (linePoints.length > 0) {
+        const lineData = JSON.stringify(linePoints);
+        document.getElementById('lineData').value = lineData; // Add data to hidden input field
+        document.getElementById('submitForm').submit(); // Submit the form
+    } else {
+        alert("Please draw at least one line before submitting.");
+    }
+});
+
+    </script>
+</body>
+</html>

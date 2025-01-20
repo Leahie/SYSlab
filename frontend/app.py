@@ -1,11 +1,8 @@
 import base64
 from io import BytesIO
 from flask import Flask, render_template, request
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, TrainingArguments, Trainer
-from datasets import Dataset, DatasetDict, load_metric
 from sklearn.model_selection import train_test_split
 import numpy as np
-import evaluate
 from model_file import RNNModel
 import pickle
 import random 
@@ -17,6 +14,7 @@ from keras.src.legacy.saving import legacy_h5_format
 from matplotlib.gridspec import GridSpec
 import pandas as pd
 import numpy as np
+import json
 
 
 base = "C:/Users/leahz/OneDrive/Desktop/Quizlet/ATC4/SYSlab"
@@ -34,6 +32,7 @@ leng = range(len(data))
 model_Y = RNNModel(model_file=f"{base}/model/Y/y_save_270000.pkl")
 
 model_premade = load_model(f'{base}/model/my_model.keras')
+model_smoothing = load_model(f'{base}/model/smoothing.keras')
 
 app = Flask(__name__)
 @app.route('/')
@@ -106,7 +105,6 @@ def LTSM():
     
     plot_url = base64.b64encode(buf.getvalue()).decode('utf8')
     return render_template('ltsm.html', plot_url=plot_url, error=0 )
-
 @app.route('/submit')
 def submit():
     #data = request.args.get('txt') HOW TO GET INPUT
@@ -152,3 +150,31 @@ def submit():
     
     plot_url = base64.b64encode(buf.getvalue()).decode('utf8')
     return render_template('submit.html', plot_url=plot_url, error=error)
+@app.route('/draw')
+def draw():
+    return render_template('draw.html')
+
+@app.route('/drawresults')
+def drawresults():
+    line_data = json.loads(request.args.get('line_data', np.array([])))
+    hasParkinson = request.args.get('hasParkinson', False)
+    if hasParkinson == "no": hasParkinson= False
+    elif hasParkinson == "yes": hasParkinson = True
+    line_data = np.array([[float(point["x"]), float(point["y"])] for point in line_data])
+    # Turn line into line likely drawn by Parkinson's Patient using LTSM model 
+    print(line_data.shape)
+    innerX = line_data[:, 0]
+    innerY = line_data[:, 1]
+    meanX = np.mean(innerX)
+    stdX = np.std(innerX)
+    meanY = np.mean(innerY)
+    stdY = np.std(innerY)
+    line_data[:, 0] = (innerX - meanX) / stdX
+    line_data[:, 1] = (innerY - meanY) / stdY
+    print(line_data)
+    if not hasParkinson:
+        pred = model_premade.predict(line_data.reshape(1,line_data.shape[0],2))
+        print(pred)
+    # Smooth line using smoothing.keras
+    
+    return render_template("draw_results.html")
