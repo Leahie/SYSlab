@@ -32,7 +32,7 @@ leng = range(len(data))
 model_Y = RNNModel(model_file=f"{base}/model/Y/y_save_270000.pkl")
 
 model_premade = load_model(f'{base}/model/my_model.keras')
-model_smoothing = load_model(f'{base}/model/smoothing.keras')
+model_smoothing = load_model(f'{base}/model/smoothing2.keras')
 
 app = Flask(__name__)
 @app.route('/')
@@ -157,10 +157,9 @@ def draw():
 @app.route('/drawresults')
 def drawresults():
     line_data = json.loads(request.args.get('line_data', np.array([])))
-    hasParkinson = request.args.get('hasParkinson', False)
-    if hasParkinson == "no": hasParkinson= False
-    elif hasParkinson == "yes": hasParkinson = True
+    hasParkinson = request.args.get('hasParkinson', "no").lower() == "yes"
     line_data = np.array([[float(point["x"]), float(point["y"])] for point in line_data])
+    
     # Turn line into line likely drawn by Parkinson's Patient using LTSM model 
     print(line_data.shape)
     innerX = line_data[:, 0]
@@ -171,10 +170,33 @@ def drawresults():
     stdY = np.std(innerY)
     line_data[:, 0] = (innerX - meanX) / stdX
     line_data[:, 1] = (innerY - meanY) / stdY
-    print(line_data)
+
+    # Create Graph 
+    plt.clf()
+    buf = BytesIO()
+    fig, axes = plt.subplots(figsize=(24,15))
+    val = data.sample()
+
+    axes.plot(line_data[:, 0], line_data[:, 1], label='Original Line', marker='o')
+    axes.set_title('X Values and Prediction')
+    axes.legend()
+
     if not hasParkinson:
-        pred = model_premade.predict(line_data.reshape(1,line_data.shape[0],2))
-        print(pred)
+        line_park = [line_data[0, :]] #first point stays the same
+        for i in range(1, line_data.shape[0]-1):
+                pred = model_premade.predict(line_data[0:i, :].reshape(1,i,2))
+                pred = np.array(pred).flatten()
+                line_park.append(pred)
+        line_park = np.array(line_park)
+        axes.plot(line_park[:, 0], line_park[:, 1], label='Modified Line', marker='o', color='g')
+        line_data = line_park
     # Smooth line using smoothing.keras
-    
-    return render_template("draw_results.html")
+    res = model_smoothing.predict(line_data.reshape(1,line_data.shape[0],2))
+    print(res)
+    res = res.reshape(-1, res.shape[-1])
+    axes.plot(res[:, 0], res[:, 1], label='Smoothed Line', marker='x', color='r' )
+
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    plot_url = base64.b64encode(buf.getvalue()).decode('utf8')
+    return render_template("draw_results.html", plot_url=plot_url)

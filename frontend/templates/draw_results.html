@@ -4,30 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}">
-    <title>Home</title>
+    <link href="{{url_for('static',filename='css/output.css')}}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Result</title>
+    <style>
+        .main{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2em, 3em;
+        }
+        img {
+            width: 100%; /* Make the image take up the full width of the screen */
+            height: auto; /* Maintain the aspect ratio */
+        }
+    </style>
 </head>
 <body>
-    <div class="Elements">
-        <h1>Try it Out!</h1>
-        <p>Press the button and the respective model will run</p>
-        <div style="display:flex; flex-direction:column; gap:5px">
-            <form action="/submit" autocomplete="off">
-                <input type="submit" value="1">
-                <label>Trained X and Y seperately</label>
-            </form>
-
-            <form action="/LTSM" autocomplete="off">
-                <input type="submit"  value="2">
-                <label>Trained X and Y together</label>
-            </form>
-
-            <form action="/draw" autocomplete="off">
-                <input type="submit"  value="3">
-                <label>Draw</label>
+    <div class="main" >
+        <img src="data:image/png;base64, {{ plot_url }}">
+        <br>
+        <div style="display:flex gap:5px"><a href="/">return home</a> <a href="/draw">rerun</a> </div>
+        
+        <div>
+            <form method="GET" action="/LTSM">
+                <input type="range" name="slider_value" min="0" max="10" value="50">
+                <button type="submit">Submit</button>
             </form>
         </div>
-        
-        
     </div>
+
+    
 </body>
 </html>
