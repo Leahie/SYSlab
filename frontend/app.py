@@ -46,7 +46,7 @@ def LTSM():
     value = request.args.get('slider_value', 1)
     pers_input = request.args.get('personalized', "")
 
-    plt.clf()
+    # plt.clf()
     buf = BytesIO()
     fig, axes = plt.subplots(2, 1, figsize=(24,15)) 
     gs = GridSpec(2, 1, height_ratios=[1, 2]) 
@@ -110,7 +110,7 @@ def submit():
     #data = request.args.get('txt') HOW TO GET INPUT
     value = request.args.get('slider_value', 1)
     print(value)
-    plt.clf()
+    # plt.clf()
     buf = BytesIO()
     fig, axes = plt.subplots(3, 1, figsize=(24,15))
     val = data.sample()
@@ -172,7 +172,7 @@ def drawresults():
     line_data[:, 1] = (innerY - meanY) / stdY
 
     # Create Graph 
-    plt.clf()
+    # plt.clf()
     buf = BytesIO()
     fig, axes = plt.subplots(figsize=(24,15))
     val = data.sample()

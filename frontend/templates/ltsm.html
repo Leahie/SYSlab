@@ -29,7 +29,7 @@
             <p>MSE: {{error}} </p>
         </div>
         <br>
-        <div style="display:flex gap:5px"><a href="/">return back</a> <a href="/LTSM">rerun</a> </div>
+        <div style="display:flex gap:5px"><a href="/" id="return">return back [0]</a> <a href="/LTSM">rerun</a> </div>
         <div>
             <form method="GET" action="/LTSM">
                 <input type="range" name="slider_value" min="0" max="10" value="50">
@@ -41,7 +41,17 @@
                 <button type="submit">Submit</button>
                 <br>
             </form>
-        
+        </div>
+        <script>
+            document.addEventListener('keydown', function(event) {
+                if (event.key === '0') { 
+                  const link = document.getElementById('return'); 
+                  if (link) {
+                    link.click(); 
+                  }
+                }
+              });
+        </script>
 
     
 </body>

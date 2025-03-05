@@ -11,23 +11,46 @@
         <h1>Try it Out!</h1>
         <p>Press the button and the respective model will run</p>
         <div style="display:flex; flex-direction:column; gap:5px">
-            <form action="/submit" autocomplete="off">
+            <form id="form1" action="/submit" autocomplete="off">
                 <input type="submit" value="1">
                 <label>Trained X and Y seperately</label>
             </form>
 
-            <form action="/LTSM" autocomplete="off">
+            <form id="form2" action="/LTSM" autocomplete="off">
                 <input type="submit"  value="2">
                 <label>Trained X and Y together</label>
             </form>
 
-            <form action="/draw" autocomplete="off">
+            <form id="form3" action="/draw" autocomplete="off">
                 <input type="submit"  value="3">
                 <label>Draw</label>
             </form>
         </div>
-        
-        
     </div>
+    <script>
+                // Get the button element
+        const form1 = document.getElementById("form1");
+        const form2 = document.getElementById("form2");
+        const form3 = document.getElementById("form3");
+
+        // Add an event listener for keydown events
+        document.addEventListener("keydown", function(event) {
+        // Check if the pressed key is "Enter"
+        if (event.key === "1") {
+            // Trigger the button click
+            form1.submit();
+        }
+        if (event.key === "2") {
+            form2.submit();
+        }
+        if (event.key === "3") {
+            form3.submit();
+        }
+        });
+        
+        
+        
+
+    </script>
 </body>
 </html>

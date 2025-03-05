@@ -41,14 +41,23 @@
 
             <button type="submit" id="submitButton" class="bg-blue-500 text-white px-4 py-2 mt-4 rounded">Submit</button>
         </form>
-        <div style="display:flex gap:5px"><a href="/">return back</a>
+        <div style="display:flex gap:5px"><a href="/" id="return">return back [0]</a>
     </div>
 
     <script>
-        const canvas = document.getElementById('drawingCanvas');
+        document.addEventListener('keydown', function(event) {
+            if (event.key === '0') { 
+              const link = document.getElementById('return'); 
+              if (link) {
+                link.click(); 
+              }
+            }
+          });
+
+const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
 let isDrawing = false;
-let linePoints = []; // Array to store all points along the drawn line
+let linePoints = []; 
 
 canvas.addEventListener('mousedown', (e) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas on new line
@@ -56,8 +65,8 @@ canvas.addEventListener('mousedown', (e) => {
     const startX = e.offsetX;
     const startY = e.offsetY;
     linePoints = [{ x: startX, y: startY }]; // Initialize with the first point
-    ctx.beginPath(); // Start a new path for the line
-    ctx.moveTo(startX, startY); // Move the pen to the starting point
+    ctx.beginPath(); 
+    ctx.moveTo(startX, startY); 
 });
 
 
